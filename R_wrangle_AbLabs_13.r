@@ -1,12 +1,13 @@
 setwd(r"(C:\Users\dowes\OneDrive\Projects\LabRep_R)")
 rm(list=ls())
 library(stringr)
+start_time <- Sys.time()
 
 iter  <- "13"
-in_dir <- "AbLab_Rpts/AbLab_2021"
+in_dir <- "AbLab_Rpts"
 in_pattern <- "AbLabs_.+\\.prn"
 out_dir <- "Output"
-out_name <- str_c("RStudio_", iter, ".csv")
+out_name <- str_c("R_version_", iter, ".csv")
 out_fullName <- file.path(out_dir, out_name)
 
 clean_lab_vals <- list(name="", tickNo="", gluc="")
@@ -52,3 +53,8 @@ for(fname in file_list) {
     process_lines(in_lines_list)
 }
 close(file_out)
+
+end_time <- Sys.time()
+time_taken <- end_time - start_time
+print(time_taken)
+
