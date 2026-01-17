@@ -4,11 +4,15 @@ library(stringr)
 start_time <- Sys.time()
 
 iter  <- "14"
-in_dir <- "AbLab_Rpts"
+in_dir <- "AbLab_Rpts/AbLab_2018-20"
 in_pattern <- "AbLabs_.+\\.prn"
 out_dir <- "Output"
-out_name <- str_c("R_version_", iter, ".csv")
-out_fullName <- file.path(out_dir, out_name)
+
+lab_out_name <- str_c("Labresults_", iter, ".csv")
+lab_out_fullName <- file.path(out_dir, lab_out_name)
+
+ID_out_name <- str_c("IDresults_", iter, ".csv")
+ID_out_fullName <- file.path(out_dir, ID_out_name)
 
 clean_lab_vals <- list(ticket="", d_coll="", age="", sex="", d_perf="", face="",
                        gluc="", fruct="", a1c="", bun="",creat="", alkp="", 
@@ -29,29 +33,35 @@ get_values <- function(line) {
         lab_vals$sex <<- str_sub(line, start=21, end=21)
         ID_vals$sex <<- lab_vals$sex
         ID_vals$zip <<- str_trim(str_sub(line, start=60, end=-1), side="both")
+        date_OB <- str_sub(line, start=9, end=19)
+        ID_vals$dob <<- date_OB
         return()
     }
     else if(str_detect(line,"SOC SEC NO:")){
-        lab_vals$d_coll <<- str_sub(line, start=55, end=64)
-        ID_vals$d_coll <<- lab_vals$ticket
+        date_coll <- str_sub(line, start=55, end=65)
+        lab_vals$d_coll <<- date_coll
+        ID_vals$d_coll <<- date_coll
         ID_vals$ssn <<- str_sub(line, start=12, end=21)
         return()
     }
     else if(str_detect(line,"TICKET NUMBER")){
         lab_vals$ticket <<- str_sub(line, start=15, end=25)
         ID_vals$ticket <<- lab_vals$ticket
-        lab_vals$d_perf <<- str_sub(line, start=55, end=64)
+        lab_vals$d_perf <<- str_sub(line, start=55, end=65)
         return()
     }
     
-    
     else if(str_detect(line,"GLUCOSE ")){
         lab_vals$gluc <<- str_trim(str_sub(line, start=30, end=40), side="both")
+        return()
     }
     else if(str_detect(line,"\f")){
         tempStr <- str_c(lab_vals, collapse=",")
-        writeLines(tempStr, con=file_out)
+        writeLines(tempStr, con=lab_out)
         lab_vals <<- clean_lab_vals
+        
+        tempStr <- str_c(ID_vals, collapse=",")
+        writeLines(tempStr, con=ID_out)
         ID_vals <<- clean_ID_vals
         return()
     }
@@ -66,9 +76,15 @@ process_lines <- function(lines){
 
 #*************************************************************
 
-file_out <- file(out_fullName,"w")
-temp_Str <- "name,ticket,gluc"
-writeLines(temp_Str, con=file_out)
+lab_out <- file(lab_out_fullName,"w")
+ID_out <- file(ID_out_fullName,"w")
+
+temp_Str <- "ticket, gluc\n"
+writeLines(temp_Str, con=lab_out)
+
+temp_Str <- "ticket, name\n"
+writeLines(temp_Str, con=ID_out)
+
 file_list <- list.files(path=in_dir, pattern=in_pattern, recursive=TRUE)
 for(fname in file_list) {
     in_file <- file(file.path(in_dir, fname), "r")
@@ -76,7 +92,9 @@ for(fname in file_list) {
     close(in_file)
     process_lines(in_lines_list)
 }
-close(file_out)
+
+close(lab_out)
+close(ID_out)
 
 end_time <- Sys.time()
 time_taken <- end_time - start_time
